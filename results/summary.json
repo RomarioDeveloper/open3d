@@ -1,0 +1,37 @@
+{
+  "total_images": 1,
+  "total_objects": 2,
+  "total_weight_g": 260.81,
+  "results": {
+    "1.jpg": [
+      {
+        "image_path": "images\\1.jpg",
+        "object_id": 0,
+        "class_id": 1,
+        "food_type": "rice",
+        "volume_cm3": 213.85,
+        "weight_g": 181.77,
+        "weight_kg": 0.1818,
+        "density_g_cm3": 0.85,
+        "polygon_points": 590,
+        "area_pixels": 92298,
+        "center_x": 0.23,
+        "center_y": 0.526
+      },
+      {
+        "image_path": "images\\1.jpg",
+        "object_id": 3,
+        "class_id": 1,
+        "food_type": "cabbage",
+        "volume_cm3": 143.71,
+        "weight_g": 79.04,
+        "weight_kg": 0.079,
+        "density_g_cm3": 0.55,
+        "polygon_points": 1014,
+        "area_pixels": 36103,
+        "center_x": 0.663,
+        "center_y": 0.478
+      }
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "image": "22.jpg",
+  "objects": [
+    {
+      "image_path": "images\\22.jpg",
+      "object_id": 1,
+      "class_id": 1,
+      "food_type": "cabbage",
+      "volume_cm3": 286.34,
+      "weight_g": 157.49,
+      "weight_kg": 0.1575,
+      "density_g_cm3": 0.55,
+      "polygon_points": 879,
+      "area_pixels": 6132,
+      "center_x": 0.835,
+      "center_y": 0.78
+    },
+    {
+      "image_path": "images\\22.jpg",
+      "object_id": 5,
+      "class_id": 1,
+      "food_type": "cabbage",
+      "volume_cm3": 181.58,
+      "weight_g": 99.87,
+      "weight_kg": 0.0999,
+      "density_g_cm3": 0.55,
+      "polygon_points": 688,
+      "area_pixels": 3748,
+      "center_x": 0.202,
+      "center_y": 0.785
+    },
+    {
+      "image_path": "images\\22.jpg",
+      "object_id": 6,
+      "class_id": 1,
+      "food_type": "cabbage",
+      "volume_cm3": 28.54,
+      "weight_g": 15.7,
+      "weight_kg": 0.0157,
+      "density_g_cm3": 0.55,
+      "polygon_points": 801,
+      "area_pixels": 5617,
+      "center_x": 0.578,
+      "center_y": 0.579
+    },
+    {
+      "image_path": "images\\22.jpg",
+      "object_id": 7,
+      "class_id": 1,
+      "food_type": "cabbage",
+      "volume_cm3": 119.84,
+      "weight_g": 65.91,
+      "weight_kg": 0.0659,
+      "density_g_cm3": 0.55,
+      "polygon_points": 1049,
+      "area_pixels": 11354,
+      "center_x": 0.475,
+      "center_y": 0.572
+    }
+  ],
+  "total_weight_g": 338.97,
+  "total_objects": 4
+}

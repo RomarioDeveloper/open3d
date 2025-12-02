@@ -1,0 +1,63 @@
+{
+  "image": "81.jpg",
+  "objects": [
+    {
+      "image_path": "images\\81.jpg",
+      "object_id": 1,
+      "class_id": 1,
+      "food_type": "rice",
+      "volume_cm3": 972.16,
+      "weight_g": 826.33,
+      "weight_kg": 0.8263,
+      "density_g_cm3": 0.85,
+      "polygon_points": 629,
+      "area_pixels": 52508,
+      "center_x": 0.237,
+      "center_y": 0.593
+    },
+    {
+      "image_path": "images\\81.jpg",
+      "object_id": 3,
+      "class_id": 1,
+      "food_type": "rice",
+      "volume_cm3": 80.92,
+      "weight_g": 68.78,
+      "weight_kg": 0.0688,
+      "density_g_cm3": 0.85,
+      "polygon_points": 839,
+      "area_pixels": 14335,
+      "center_x": 0.49,
+      "center_y": 0.307
+    },
+    {
+      "image_path": "images\\81.jpg",
+      "object_id": 4,
+      "class_id": 1,
+      "food_type": "chicken",
+      "volume_cm3": 1336.57,
+      "weight_g": 1403.4,
+      "weight_kg": 1.4034,
+      "density_g_cm3": 1.05,
+      "polygon_points": 721,
+      "area_pixels": 59458,
+      "center_x": 0.707,
+      "center_y": 0.529
+    },
+    {
+      "image_path": "images\\81.jpg",
+      "object_id": 6,
+      "class_id": 1,
+      "food_type": "cabbage",
+      "volume_cm3": 510.71,
+      "weight_g": 280.89,
+      "weight_kg": 0.2809,
+      "density_g_cm3": 0.55,
+      "polygon_points": 976,
+      "area_pixels": 17926,
+      "center_x": 0.724,
+      "center_y": 0.743
+    }
+  ],
+  "total_weight_g": 2579.4,
+  "total_objects": 4
+}

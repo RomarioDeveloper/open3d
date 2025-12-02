@@ -108,45 +108,172 @@ class FoodWeightEstimator:
     def detect_food_type(self, polygon: np.ndarray, image: np.ndarray, mask: np.ndarray, 
                         img_width: int, img_height: int) -> Tuple[str, float]:
         """
-        Detect food type from segmentation
-        Uses position, color, and shape characteristics
+        Detect food type from segmentation using advanced color, texture, and shape analysis
         """
         h, w = image.shape[:2]
         center_x = np.mean(polygon[:, 0]) / w
         center_y = np.mean(polygon[:, 1]) / h
         
-        # Extract color from masked region
+        # Extract masked region
         masked_region = image[mask > 0]
-        if len(masked_region) > 0:
-            avg_color = np.mean(masked_region, axis=0)
-            avg_brightness = np.mean(avg_color)
-        else:
-            avg_brightness = 128
+        if len(masked_region) == 0:
+            return 'default', 3.0
         
-        # Calculate area and aspect ratio
+        # Convert to RGB if needed
+        if len(image.shape) == 3 and image.shape[2] == 3:
+            # BGR to RGB
+            masked_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)[mask > 0]
+        else:
+            masked_rgb = masked_region
+        
+        # Color analysis
+        avg_color = np.mean(masked_rgb, axis=0)
+        std_color = np.std(masked_rgb, axis=0)
+        avg_brightness = np.mean(avg_color)
+        color_variance = np.mean(std_color)
+        
+        # RGB channels
+        r, g, b = avg_color[0], avg_color[1], avg_color[2]
+        
+        # Calculate area and shape characteristics
         area_pixels = np.sum(mask > 0)
         bbox = cv2.boundingRect(polygon)
         aspect_ratio = bbox[2] / max(bbox[3], 1)
+        area_ratio = area_pixels / (w * h)
         
-        # Decision logic
-        # Left side + bright = rice
-        if center_x < 0.5 and avg_brightness > 150:
-            return 'rice', 2.0
+        # Texture analysis using gradient
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
+        masked_gray = gray[mask > 0]
+        texture_variance = np.var(masked_gray) if len(masked_gray) > 0 else 0
         
-        # Right side + darker = meat/cabbage
-        elif center_x > 0.5 and avg_brightness < 120:
-            return 'cabbage', 4.0
+        # Color dominance analysis
+        r_dominance = r / (r + g + b + 1e-6)
+        g_dominance = g / (r + g + b + 1e-6)
+        b_dominance = b / (r + g + b + 1e-6)
         
-        # Large area + round = cabbage
-        elif area_pixels > 50000 and aspect_ratio > 0.8:
-            return 'cabbage', 4.0
+        # Scoring system for different food types
+        scores = {
+            'rice': 0.0,
+            'cabbage': 0.0,
+            'potato': 0.0,
+            'carrot': 0.0,
+            'tomato': 0.0,
+            'chicken': 0.0,
+            'beef': 0.0,
+            'pork': 0.0,
+            'fish': 0.0,
+            'pasta': 0.0,
+        }
         
-        # Small area + bright = rice
-        elif area_pixels < 50000 and avg_brightness > 150:
-            return 'rice', 2.0
+        # Rice characteristics: white/beige, high brightness, low color variance, small-medium size
+        if avg_brightness > 140 and color_variance < 30:
+            scores['rice'] += 3.0
+        if avg_brightness > 150:
+            scores['rice'] += 2.0
+        if area_pixels < 60000 and aspect_ratio > 0.7:
+            scores['rice'] += 1.0
+        if r > 180 and g > 180 and b > 180:
+            scores['rice'] += 2.0
         
-        # Default
-        return 'cabbage', 4.0
+        # Cabbage characteristics: green, medium brightness, medium size, round shape
+        if g_dominance > 0.35 and g > r and g > b:
+            scores['cabbage'] += 3.0
+        if 100 < avg_brightness < 160 and g > 100:
+            scores['cabbage'] += 2.0
+        if aspect_ratio > 0.7 and area_pixels > 30000:
+            scores['cabbage'] += 1.0
+        if g > 120 and r < 150 and b < 150:
+            scores['cabbage'] += 2.0
+        
+        # Potato characteristics: brown/yellow, medium brightness, round/oval
+        if r_dominance > 0.35 and 100 < avg_brightness < 140:
+            scores['potato'] += 2.0
+        if 80 < r < 150 and 80 < g < 140 and 60 < b < 120:
+            scores['potato'] += 2.0
+        if aspect_ratio > 0.6 and area_pixels > 20000:
+            scores['potato'] += 1.0
+        
+        # Carrot characteristics: orange, high red/green ratio, elongated
+        if r > 150 and g > 100 and b < 100:
+            scores['carrot'] += 3.0
+        if r_dominance > 0.4 and g_dominance > 0.3:
+            scores['carrot'] += 2.0
+        if aspect_ratio < 0.6 or aspect_ratio > 1.5:
+            scores['carrot'] += 1.0
+        
+        # Tomato characteristics: red, high brightness, round
+        if r > 150 and r > g * 1.5 and b < 100:
+            scores['tomato'] += 3.0
+        if r_dominance > 0.45:
+            scores['tomato'] += 2.0
+        if aspect_ratio > 0.7:
+            scores['tomato'] += 1.0
+        
+        # Meat characteristics (chicken, beef, pork): brown/pink, medium-low brightness, medium texture variance
+        if 60 < avg_brightness < 120 and texture_variance > 200:
+            scores['chicken'] += 2.0
+            scores['beef'] += 2.0
+            scores['pork'] += 2.0
+        if 80 < r < 140 and 60 < g < 120 and 50 < b < 110:
+            scores['chicken'] += 2.0
+            scores['beef'] += 1.5
+            scores['pork'] += 1.5
+        if r > g and r > b and avg_brightness < 110:
+            scores['beef'] += 1.5
+            scores['pork'] += 1.5
+        
+        # Fish characteristics: white/pink, medium brightness, low texture variance
+        if avg_brightness > 120 and color_variance < 25:
+            scores['fish'] += 2.0
+        if r > 140 and g > 130 and b > 120:
+            scores['fish'] += 2.0
+        
+        # Pasta characteristics: yellow/beige, medium brightness, low texture variance
+        if 120 < avg_brightness < 160 and r > 150 and g > 140:
+            scores['pasta'] += 2.0
+        if r_dominance > 0.35 and g_dominance > 0.35:
+            scores['pasta'] += 1.5
+        
+        # Find best match
+        best_type = max(scores, key=scores.get)
+        best_score = scores[best_type]
+        
+        # If no strong match, use improved heuristics
+        if best_score < 2.0:
+            # Fallback to improved heuristics
+            if avg_brightness > 150 and area_pixels < 50000:
+                best_type = 'rice'
+            elif g_dominance > 0.3 and avg_brightness > 100:
+                best_type = 'cabbage'
+            elif r > 150 and g > 100:
+                best_type = 'carrot' if aspect_ratio < 0.7 else 'tomato'
+            elif 80 < avg_brightness < 120:
+                best_type = 'chicken'
+            else:
+                best_type = 'default'
+        
+        # Height estimation based on food type
+        height_map = {
+            'rice': 2.0,
+            'cabbage': 4.0,
+            'potato': 3.0,
+            'carrot': 2.5,
+            'tomato': 3.5,
+            'chicken': 2.5,
+            'beef': 2.5,
+            'pork': 2.5,
+            'fish': 2.0,
+            'pasta': 2.0,
+            'default': 3.0,
+        }
+        
+        height_cm = height_map.get(best_type, 3.0)
+        
+        logger.debug(f"Food type detected: {best_type} (score: {best_score:.2f}, "
+                    f"brightness: {avg_brightness:.1f}, area: {area_pixels}, "
+                    f"color: R={r:.1f}, G={g:.1f}, B={b:.1f})")
+        
+        return best_type, height_cm
     
     def create_mesh_from_polygon(self, polygon: np.ndarray, image_size: Tuple[int, int],
                                 height_cm: float, pixels_per_cm: float) -> o3d.geometry.TriangleMesh:
@@ -247,6 +374,7 @@ class FoodWeightEstimator:
         
         results = []
         meshes = []
+        result_polygons = []  # Store polygons for visualization
         
         for idx, obj in enumerate(objects):
             if obj['class_name'] != 'food':
@@ -287,17 +415,74 @@ class FoodWeightEstimator:
                 )
                 
                 results.append(result)
+                result_polygons.append(polygon)
                 if visualize:
                     meshes.append((mesh, result))
                 
             except Exception as e:
                 logger.error(f"Error processing object {idx}: {e}")
         
-        if visualize and meshes:
-            logger.info(f"Opening 3D visualization for {len(meshes)} objects...")
-            self._visualize_meshes(meshes)
+        if visualize:
+            if meshes:
+                logger.info(f"Показ визуализации изображения с {len(meshes)} объектами...")
+                self._visualize_image_with_segments(image, results, result_polygons)
+                logger.info(f"Показ 3D моделей для {len(meshes)} объектов...")
+                self._visualize_meshes(meshes)
+            else:
+                logger.warning("Нет объектов для визуализации")
         
         return results
+    
+    def _visualize_image_with_segments(self, image: np.ndarray, results: List[FoodResult], 
+                                      polygons: List[np.ndarray], output_path: Optional[str] = None):
+        """Visualize original image with segmentation overlays and weight information"""
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Polygon
+        
+        fig, ax = plt.subplots(1, 1, figsize=(12, 8))
+        ax.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        
+        # Colors for different food items
+        colors = [
+            [1.0, 0.0, 0.0, 0.4],  # Red
+            [0.0, 1.0, 0.0, 0.4],  # Green
+            [0.0, 0.0, 1.0, 0.4],  # Blue
+            [1.0, 1.0, 0.0, 0.4],  # Yellow
+            [1.0, 0.0, 1.0, 0.4],  # Magenta
+            [0.0, 1.0, 1.0, 0.4],  # Cyan
+        ]
+        
+        # Draw polygons and labels
+        for idx, (result, polygon) in enumerate(zip(results, polygons)):
+            if polygon is not None and len(polygon) > 0:
+                color = colors[idx % len(colors)]
+                # Convert polygon to list of tuples for matplotlib
+                poly_points = [(p[0], p[1]) for p in polygon]
+                poly = Polygon(poly_points, closed=True, fill=True, 
+                              facecolor=color, edgecolor=color[:3], linewidth=2)
+                ax.add_patch(poly)
+                
+                # Add text label with weight
+                center_x = int(result.center_x * image.shape[1])
+                center_y = int(result.center_y * image.shape[0])
+                label = f"{result.food_type}\n{result.weight_g:.1f}g"
+                ax.text(center_x, center_y, label, 
+                       fontsize=10, fontweight='bold',
+                       bbox=dict(boxstyle='round', facecolor='white', alpha=0.8),
+                       ha='center', va='center')
+        
+        ax.set_title(f"Обнаружено объектов: {len(results)}, Общий вес: {sum(r.weight_g for r in results):.1f}g",
+                    fontsize=14, fontweight='bold')
+        ax.axis('off')
+        
+        plt.tight_layout()
+        
+        if output_path:
+            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            logger.info(f"Визуализация сохранена: {output_path}")
+        
+        plt.show()
+        plt.close()
     
     def _visualize_meshes(self, meshes: List[Tuple]):
         """Visualize all 3D meshes together"""
@@ -324,7 +509,7 @@ class FoodWeightEstimator:
         weights = [f"{r.food_type}:{r.weight_g:.0f}g" for _, r in meshes]
         window_name = " | ".join(weights)
         
-        logger.info(f"3D window opened. Close window to continue...")
+        logger.info(f"3D окно открыто. Закройте окно для продолжения...")
         o3d.visualization.draw_geometries(
             geometries,
             window_name=window_name,
